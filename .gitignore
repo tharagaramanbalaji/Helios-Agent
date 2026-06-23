@@ -1,0 +1,20 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Environment / Secrets
+.env
+.env.*
+
+# Node / JS
+node_modules/
+dist/
+.eslintcache
+
+# Logs & Temp files
+*.log
+uvicorn_err.txt
+uvicorn_out.txt
+temp_test.js
+.gemini/
