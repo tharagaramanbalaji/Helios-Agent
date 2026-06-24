@@ -65,16 +65,16 @@ For active development, run both the backend and frontend dev servers.
 From the root directory:
 ```bash
 .\venv\Scripts\activate
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8080
 ```
-The API documentation will be available at `http://localhost:8000/docs`.
+The API documentation will be available at `http://localhost:8080/docs`.
 
 ### 2. Start the Frontend (Vite)
 From the `frontend` directory:
 ```bash
 npm run dev
 ```
-Open `http://localhost:5173` in your browser to chat with Helios.
+Open `http://localhost:3000` in your browser to chat with Helios.
 
 ---
 
