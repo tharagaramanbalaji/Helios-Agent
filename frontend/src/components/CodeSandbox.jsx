@@ -78,7 +78,7 @@ export default function CodeSandbox({ open, onClose, initialCode }) {
       <header className="sandbox-header">
         <div className="sandbox-title">
           <span className="sandbox-icon">⚡</span>
-          Python Sandbox
+          Sandbox
         </div>
         <button className="sandbox-close-btn" type="button" onClick={onClose} title="Close Sandbox">
           &times;

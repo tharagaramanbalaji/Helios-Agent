@@ -970,16 +970,11 @@ button {
 }
 
 .sandbox-title {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  background: linear-gradient(135deg, var(--gold-bright) 0%, #ffaa44 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-family: 'Instrument Serif', serif;
+  font-size: 20px;
+  font-weight: normal;
+  letter-spacing: 0.02em;
+  color: var(--gold-bright);
 }
 
 .sandbox-icon {
@@ -1029,13 +1024,10 @@ button {
 }
 
 .sandbox-section-title {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-family: 'Instrument Serif', serif;
+  font-size: 16px;
+  letter-spacing: 0.05em;
   color: var(--gold-mid);
-  border-left: 2px solid var(--gold-bright);
-  padding-left: 8px;
 }
 
 /* File explorer */

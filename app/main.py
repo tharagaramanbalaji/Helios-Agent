@@ -194,30 +194,42 @@ async def websocket_chat(websocket: WebSocket):
                             if func_match:
                                 tool_name = func_match.group(1).strip()
                                 kwargs = {}
+                                extracted_code = None
                                 if tool_name == "python_interpreter":
-                                    code_match = re.search(r"```(?:python|py)\n([\s\S]*?)```", content_str)
+                                    code_match = re.search(r"```(?:python|py)\r?\n([\s\S]*?)```", content_str)
                                     if code_match:
-                                        kwargs["code"] = code_match.group(1).strip()
+                                        extracted_code = code_match.group(1).strip()
                                     else:
-                                        param_match = re.search(r"<parameter=code>\n([\s\S]*?)(?:</parameter>|$)", content_str)
+                                        param_match = re.search(r"<parameter=code>\r?\n([\s\S]*?)(?:</parameter>|$)", content_str)
                                         if param_match:
-                                            kwargs["code"] = param_match.group(1).strip()
-                                            
-                                import uuid
-                                full_message.tool_calls = [{
-                                    "name": tool_name,
-                                    "args": kwargs,
-                                    "id": "call_" + str(uuid.uuid4()).replace("-", "")[:8]
-                                }]
-                        elif "```python" in content_str or "```py\n" in content_str:
-                            code_match = re.search(r"```(?:python|py)\n([\s\S]*?)```", content_str)
+                                            extracted_code = param_match.group(1).strip()
+                                    if extracted_code:
+                                        kwargs["code"] = extracted_code
+                                        
+                                if tool_name != "python_interpreter" or (extracted_code and extracted_code not in executed_codes):
+                                    if extracted_code:
+                                        executed_codes.add(extracted_code)
+                                    import uuid
+                                    full_message.tool_calls = [{
+                                        "name": tool_name,
+                                        "args": kwargs,
+                                        "id": "call_" + str(uuid.uuid4()).replace("-", "")[:8]
+                                    }]
+                                    full_message.content = content_str[:content_str.find("<function=")].strip()
+
+                        elif "```python" in content_str or "```py\r\n" in content_str or "```py\n" in content_str:
+                            code_match = re.search(r"```(?:python|py)\r?\n([\s\S]*?)```", content_str)
                             if code_match:
-                                import uuid
-                                full_message.tool_calls = [{
-                                    "name": "python_interpreter",
-                                    "args": {"code": code_match.group(1).strip()},
-                                    "id": "call_" + str(uuid.uuid4()).replace("-", "")[:8]
-                                }]
+                                extracted_code = code_match.group(1).strip()
+                                if extracted_code not in executed_codes:
+                                    executed_codes.add(extracted_code)
+                                    import uuid
+                                    full_message.tool_calls = [{
+                                        "name": "python_interpreter",
+                                        "args": {"code": extracted_code},
+                                        "id": "call_" + str(uuid.uuid4()).replace("-", "")[:8]
+                                    }]
+                                    full_message.content = re.sub(r"```(?:python|py)\r?\n[\s\S]*?```", "", content_str).strip()
 
                     if full_message and full_message.tool_calls:
                         for tool_call in full_message.tool_calls:
