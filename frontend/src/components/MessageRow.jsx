@@ -63,6 +63,7 @@ export default function MessageRow({ message, index, onEdit, onRegenerate, onRun
       ) : role === 'assistant' ? (
         <div className="msg-bubble md">
           {toolCalls && toolCalls.map((tc) => {
+            if (tc.tool === 'python_interpreter') return null;
             const argText = formatToolArgs(tc.tool, tc.args)
             const isDone = tc.status === 'done'
             const isError = tc.result && tc.result.startsWith('Error')
