@@ -109,15 +109,25 @@ export default function CodeSandbox({ open, onClose, initialCode }) {
 
         {/* Code Editor section */}
         <section className="sandbox-section code-editor-sec">
-          <div className="sandbox-section-title">Editor (main.py)</div>
-          <textarea
-            className="sandbox-textarea"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="# Write Python code here...&#10;print('Hello from Helios Sandbox!')"
-            disabled={running}
-            spellCheck={false}
-          />
+          <div className="sandbox-section-title">Editor</div>
+          <div className="editor-window">
+            <div className="editor-titlebar">
+              <div className="editor-controls">
+                <span className="control-dot close" />
+                <span className="control-dot minimize" />
+                <span className="control-dot expand" />
+              </div>
+              <span className="editor-filename">main.py</span>
+            </div>
+            <textarea
+              className="sandbox-textarea"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="# Write Python code here...&#10;print('Hello from Helios Sandbox!')"
+              disabled={running}
+              spellCheck={false}
+            />
+          </div>
         </section>
 
         {/* Sandbox actions */}
@@ -143,24 +153,32 @@ export default function CodeSandbox({ open, onClose, initialCode }) {
         {/* Terminal output console */}
         <section className="sandbox-section terminal-sec">
           <div className="sandbox-section-title">Terminal Console</div>
-          <div className="terminal-box">
-            {running && <div className="terminal-loading">Executing script...</div>}
-            
-            {error && <div className="terminal-stderr">Error: {error}</div>}
+          <div className="terminal-window">
+            <div className="terminal-titlebar">
+              <div className="editor-controls">
+                <span className="control-dot terminal-dot" />
+              </div>
+              <span className="terminal-filename">bash</span>
+            </div>
+            <div className="terminal-box">
+              {running && <div className="terminal-loading">Executing script...<span className="blink-cursor">_</span></div>}
+              
+              {error && <div className="terminal-stderr">Error: {error}</div>}
 
-            {output && (
-              <>
-                {output.stdout && <pre className="terminal-stdout">{output.stdout}</pre>}
-                {output.stderr && <pre className="terminal-stderr">{output.stderr}</pre>}
-                <div className={`terminal-status ${output.exit_code === 0 ? 'success' : 'error'}`}>
-                  [Process exited with code {output.exit_code}]
-                </div>
-              </>
-            )}
+              {output && (
+                <>
+                  {output.stdout && <pre className="terminal-stdout">{output.stdout}</pre>}
+                  {output.stderr && <pre className="terminal-stderr">{output.stderr}</pre>}
+                  <div className={`terminal-status ${output.exit_code === 0 ? 'success' : 'error'}`}>
+                    [Process exited with code {output.exit_code}]
+                  </div>
+                </>
+              )}
 
-            {!running && !error && !output && (
-              <div className="terminal-placeholder">Console output will appear here.</div>
-            )}
+              {!running && !error && !output && (
+                <div className="terminal-placeholder">Console output will appear here.<span className="blink-cursor">_</span></div>
+              )}
+            </div>
           </div>
         </section>
       </div>
