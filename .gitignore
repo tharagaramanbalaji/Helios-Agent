@@ -18,3 +18,4 @@ uvicorn_err.txt
 uvicorn_out.txt
 temp_test.js
 .gemini/
+sandbox/
