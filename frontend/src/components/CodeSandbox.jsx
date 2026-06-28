@@ -77,7 +77,6 @@ export default function CodeSandbox({ open, onClose, initialCode }) {
     <aside className="code-sandbox" aria-label="Code Sandbox">
       <header className="sandbox-header">
         <div className="sandbox-title">
-          <span className="sandbox-icon">⚡</span>
           Sandbox
         </div>
         <button className="sandbox-close-btn" type="button" onClick={onClose} title="Close Sandbox">
