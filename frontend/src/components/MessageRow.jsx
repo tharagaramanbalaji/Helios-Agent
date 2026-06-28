@@ -20,7 +20,12 @@ function ToolIcon({ className }) {
 
 function formatToolArgs(tool, args) {
   if (!args) return ''
-  if (typeof args === 'string') return args
+  if (tool === 'python_interpreter') return ''
+  
+  if (typeof args === 'string') {
+    if (args.length > 60) return args.substring(0, 60) + '...'
+    return args
+  }
   
   if (tool === 'calculate' && args.expression) {
     return args.expression
@@ -31,9 +36,13 @@ function formatToolArgs(tool, args) {
     if (keys.length === 1 && keys[0] === 'expression') {
       return args.expression
     }
-    return keys.map((k) => `${k}=${JSON.stringify(args[k])}`).join(', ')
+    const res = keys.map((k) => `${k}=${JSON.stringify(args[k])}`).join(', ')
+    if (res.length > 60) return res.substring(0, 60) + '...'
+    return res
   } catch (e) {
-    return JSON.stringify(args)
+    const str = JSON.stringify(args)
+    if (str.length > 60) return str.substring(0, 60) + '...'
+    return str
   }
 }
 
