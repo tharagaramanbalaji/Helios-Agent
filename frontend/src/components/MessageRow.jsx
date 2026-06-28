@@ -62,8 +62,10 @@ export default function MessageRow({ message, index, onEdit, onRegenerate, onRun
               <div key={tc.id} className={`tool-call-block ${tc.status} ${isError ? 'has-error' : ''}`}>
                 <span className="tool-call-icon"><ToolIcon className="tool-call-svg" /></span>
                 <span className="tool-call-name">{tc.tool}</span>
-                <span className="tool-call-expr">({argText})</span>
-                {tc.result && (
+                {tc.tool !== 'python_interpreter' && argText && (
+                  <span className="tool-call-expr">({argText})</span>
+                )}
+                {tc.result && tc.tool !== 'python_interpreter' && (
                   tc.tool === 'websearch' ? (() => {
                     try {
                       const searchResults = JSON.parse(tc.result)
@@ -110,7 +112,7 @@ export default function MessageRow({ message, index, onEdit, onRegenerate, onRun
                   )
                 )}
                 {!isDone && <span className="tool-call-loading-dots">...</span>}
-                {isError && tc.tool !== 'websearch' && (
+                {isError && tc.tool !== 'websearch' && tc.tool !== 'python_interpreter' && (
                   <div className="tool-call-error-detail">
                     {tc.result}
                   </div>
