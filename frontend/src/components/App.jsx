@@ -113,6 +113,12 @@ export default function App() {
           const currentCalls = m.toolCalls || []
           if (event.type === 'tool_start') {
             if (currentCalls.some((c) => c.id === event.id)) return m
+            
+            if (event.tool === 'python_interpreter' && event.args && event.args.code) {
+              setSandboxCode(event.args.code)
+              setSandboxOpen(true)
+            }
+            
             return {
               ...m,
               pending: false,
