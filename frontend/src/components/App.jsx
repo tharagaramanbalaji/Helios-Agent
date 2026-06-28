@@ -4,6 +4,7 @@ import Sidebar from './Sidebar'
 import MessageList from './MessageList'
 import Composer from './Composer'
 import EditModal from './EditModal'
+import CodeSandbox from './CodeSandbox'
 
 function nowLabel() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -22,6 +23,9 @@ export default function App() {
   const [busy, setBusy]                   = useState(false)
   // Edit modal state
   const [editTarget, setEditTarget]       = useState(null) // { index, content }
+  // Sandbox state
+  const [sandboxOpen, setSandboxOpen]     = useState(false)
+  const [sandboxCode, setSandboxCode]     = useState('')
 
   const requestIdRef       = useRef(0)
   const abortedRef         = useRef(false)
@@ -224,11 +228,17 @@ export default function App() {
     await generateAssistant(messages.slice(0, index))
   }, [busy, messages, generateAssistant])
 
+  // ── Run Python code block in sandbox ──────────────────────────────────────
+  const handleRunCode = useCallback((codeText) => {
+    setSandboxCode(codeText)
+    setSandboxOpen(true)
+  }, [])
+
   const modelLabel = selectedModel || 'default'
 
   return (
     <>
-      <div className="shell">
+      <div className={`shell ${sandboxOpen ? 'shell-with-sandbox' : ''}`}>
         <Sidebar
           models={models}
           selectedModel={selectedModel}
@@ -259,10 +269,17 @@ export default function App() {
             onPrompt={send}
             onEdit={editUserMessage}
             onRegenerate={regenerateAssistant}
+            onRunCode={handleRunCode}
           />
 
           <Composer onSend={send} disabled={busy} />
         </main>
+
+        <CodeSandbox
+          open={sandboxOpen}
+          onClose={() => setSandboxOpen(false)}
+          initialCode={sandboxCode}
+        />
       </div>
 
       {editTarget && (

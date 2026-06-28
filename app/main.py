@@ -9,10 +9,14 @@ from app.agent import calculate, websearch
 from app.config import settings
 from app.schemas import ChatRequest, ChatResponse, Message
 
+from pydantic import BaseModel
+from typing import Optional, Dict
 import httpx
 import json
 import os
 import time
+import subprocess
+import shutil
 
 app = FastAPI(title=settings.app_name)
 
@@ -224,6 +228,98 @@ async def websocket_chat(websocket: WebSocket):
                 await websocket.send_text(json.dumps({"type": "error", "detail": f"Ollama chat error: {str(e)}"}))
     except WebSocketDisconnect:
         return
+
+
+# ── Python Sandbox endpoints ──────────────────────────────────────────────────
+
+SANDBOX_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sandbox")
+
+class SandboxExecuteRequest(BaseModel):
+    code: str
+    files: Optional[Dict[str, str]] = None
+
+@app.post("/sandbox/execute")
+async def sandbox_execute(request: SandboxExecuteRequest):
+    os.makedirs(SANDBOX_DIR, exist_ok=True)
+    
+    # Write files if provided
+    if request.files:
+        for file_name, content in request.files.items():
+            safe_path = os.path.abspath(os.path.join(SANDBOX_DIR, file_name))
+            if not safe_path.startswith(os.path.abspath(SANDBOX_DIR)):
+                raise HTTPException(status_code=400, detail="Invalid file path (directory traversal detected)")
+            os.makedirs(os.path.dirname(safe_path), exist_ok=True)
+            with open(safe_path, "w", encoding="utf-8") as f:
+                f.write(content)
+                
+    # Always write the main code to main.py
+    main_py = os.path.join(SANDBOX_DIR, "main.py")
+    with open(main_py, "w", encoding="utf-8") as f:
+        f.write(request.code)
+        
+    python_bin = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "venv", "Scripts", "python.exe")
+    if not os.path.exists(python_bin):
+        python_bin = "python"
+        
+    try:
+        result = subprocess.run(
+            [python_bin, "main.py"],
+            cwd=SANDBOX_DIR,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=15.0
+        )
+        return {
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "exit_code": result.returncode
+        }
+    except subprocess.TimeoutExpired as e:
+        return {
+            "stdout": e.stdout or "",
+            "stderr": (e.stderr or "") + "\nTimeoutExpired: Code execution exceeded 15 seconds limit.",
+            "exit_code": -1
+        }
+    except Exception as e:
+        return {
+            "stdout": "",
+            "stderr": f"Execution failed: {str(e)}",
+            "exit_code": -1
+        }
+
+@app.get("/sandbox/files")
+async def sandbox_files():
+    if not os.path.exists(SANDBOX_DIR):
+        return []
+    
+    file_list = []
+    for root, dirs, files in os.walk(SANDBOX_DIR):
+        for file in files:
+            full_path = os.path.join(root, file)
+            rel_path = os.path.relpath(full_path, SANDBOX_DIR)
+            size = os.path.getsize(full_path)
+            file_list.append({
+                "name": rel_path.replace("\\", "/"),
+                "sizeBytes": size
+            })
+    file_list.sort(key=lambda x: x["name"])
+    return file_list
+
+@app.post("/sandbox/clear")
+async def sandbox_clear():
+    if os.path.exists(SANDBOX_DIR):
+        try:
+            for item in os.listdir(SANDBOX_DIR):
+                item_path = os.path.join(SANDBOX_DIR, item)
+                if os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+                else:
+                    os.remove(item_path)
+            return {"status": "success", "detail": "Workspace cleared"}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to clear workspace: {str(e)}")
+    return {"status": "success", "detail": "Workspace already empty"}
 
 
 # ── Static frontend (production) ──────────────────────────────────────────────

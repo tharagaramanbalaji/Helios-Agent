@@ -19,11 +19,19 @@ function ensureMarked() {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
 
+    const isPython = language === 'python' || language === 'py'
+    const runBtn = isPython
+      ? `<button class="run-code-btn" data-run-code="true" type="button">Run</button>`
+      : ''
+
     return (
       `<div class="code-block">` +
       `<div class="code-header">` +
       `<span class="code-lang">${language}</span>` +
+      `<div class="code-actions">` +
+      runBtn +
       `<button class="copy-btn" data-copy-code="true" type="button">Copy</button>` +
+      `</div>` +
       `</div>` +
       `<pre><code>${escaped}</code></pre>` +
       `</div>`
@@ -49,16 +57,25 @@ function markdownToHtml(raw) {
   }
 }
 
-export default function Markdown({ content }) {
+export default function Markdown({ content, onRunCode }) {
   const ref = useRef(null)
   const html = useMemo(() => markdownToHtml(content), [content])
 
-  // Delegate copy-button clicks inside the rendered HTML
+  // Delegate button clicks inside the rendered HTML
   useEffect(() => {
     const el = ref.current
     if (!el) return
 
     const handler = async (e) => {
+      // Check if "Run" button clicked
+      const runBtn = e.target.closest('[data-run-code]')
+      if (runBtn) {
+        const code = runBtn.closest('.code-block')?.querySelector('code')?.textContent ?? ''
+        onRunCode?.(code)
+        return
+      }
+
+      // Check if "Copy" button clicked
       const btn = e.target.closest('[data-copy-code]')
       if (!btn) return
       const code = btn.closest('.code-block')?.querySelector('code')?.textContent ?? ''
@@ -77,7 +94,7 @@ export default function Markdown({ content }) {
 
     el.addEventListener('click', handler)
     return () => el.removeEventListener('click', handler)
-  }, [html])
+  }, [html, onRunCode])
 
   return (
     <div

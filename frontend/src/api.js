@@ -133,3 +133,31 @@ export async function fetchHealth() {
   const response = await fetch('/health')
   return response.json()
 }
+
+/** Execute python code in the sandbox */
+export async function executePythonCode(code, files = null) {
+  const response = await fetch('/sandbox/execute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, files }),
+  })
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}))
+    throw new Error(errData.detail || `Execution failed with HTTP ${response.status}`)
+  }
+  return response.json()
+}
+
+/** Get list of files in the sandbox workspace */
+export async function fetchSandboxFiles() {
+  const response = await fetch('/sandbox/files')
+  if (!response.ok) throw new Error(`Failed to fetch files: HTTP ${response.status}`)
+  return response.json()
+}
+
+/** Clear all files in the sandbox workspace */
+export async function clearSandboxWorkspace() {
+  const response = await fetch('/sandbox/clear', { method: 'POST' })
+  if (!response.ok) throw new Error(`Failed to clear workspace: HTTP ${response.status}`)
+  return response.json()
+}

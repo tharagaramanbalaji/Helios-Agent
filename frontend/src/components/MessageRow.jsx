@@ -37,7 +37,7 @@ function formatToolArgs(tool, args) {
   }
 }
 
-export default function MessageRow({ message, index, onEdit, onRegenerate }) {
+export default function MessageRow({ message, index, onEdit, onRegenerate, onRunCode }) {
   const { role, content, time, pending, toolCalls, benchmarks } = message
 
   return (
@@ -118,7 +118,7 @@ export default function MessageRow({ message, index, onEdit, onRegenerate }) {
               </div>
             )
           })}
-          {content && <Markdown content={content} />}
+          {content && <Markdown content={content} onRunCode={onRunCode} />}
         </div>
       ) : (
         <div

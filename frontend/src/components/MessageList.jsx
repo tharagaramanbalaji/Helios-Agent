@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import EmptyState from './EmptyState'
 import MessageRow from './MessageRow'
 
-export default function MessageList({ messages, onPrompt, onEdit, onRegenerate }) {
+export default function MessageList({ messages, onPrompt, onEdit, onRegenerate, onRunCode }) {
   const listRef = useRef(null)
 
   // Auto-scroll to bottom whenever messages change
@@ -31,6 +31,7 @@ export default function MessageList({ messages, onPrompt, onEdit, onRegenerate }
             index={i}
             onEdit={onEdit}
             onRegenerate={onRegenerate}
+            onRunCode={onRunCode}
           />
         ))
       )}
