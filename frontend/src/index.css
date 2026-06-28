@@ -23,8 +23,8 @@
   --sidebar-w: 220px;
   --r: 6px;
 
-  --font-primary:   'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
-  --font-secondary: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-primary:   'Geist Mono', Consolas, monospace;
+  --font-secondary: 'Geist', system-ui, sans-serif;
 }
 
 *, *::before, *::after {
