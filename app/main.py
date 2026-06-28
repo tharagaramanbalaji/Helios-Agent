@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage
-from app.agent import calculate, websearch
+from app.agent import calculate, websearch, python_interpreter
 
 from app.config import settings
 from app.schemas import ChatRequest, ChatResponse, Message
@@ -126,7 +126,7 @@ async def websocket_chat(websocket: WebSocket):
                     model=model_name,
                     temperature=request.temperature
                 )
-                model_with_tools = llm.bind_tools([calculate, websearch])
+                model_with_tools = llm.bind_tools([calculate, websearch, python_interpreter])
                 
                 await websocket.send_text(json.dumps({"type": "start", "model": model_name}))
                 
@@ -134,8 +134,10 @@ async def websocket_chat(websocket: WebSocket):
                     "You are Helios, a highly capable AI assistant with access to tools. "
                     "You have access to the following tools:\n"
                     "1. 'calculate' tool: Always call this tool to evaluate mathematical expressions. Do not try to compute math yourself.\n"
-                    "2. 'websearch' tool: Call this tool to search the web for current events, real-time facts, or external knowledge. "
-                    "Use this tool only when the query requires fresh real-time information or external facts not present in your local knowledge base. "
+                    "2. 'websearch' tool: Call this tool to search the web for current events, real-time facts, or external knowledge.\n"
+                    "3. 'python_interpreter' tool: Call this tool to execute Python code in the sandbox. Use this tool whenever the user asks you to write code, solve a programming problem, run a simulation, or process data. "
+                    "CRITICAL: When you use the 'python_interpreter' tool, write the code inside the tool call. Do not write the code block in the chat response. "
+                    "After you run the tool, write a concise summary of the code and its execution results in the chat window. Do not repeat the code block in your chat message, as the user can see it directly in their sandbox panel.\n"
                     "CRITICAL: If you decide to call a tool, you must generate the tool call immediately without any preceding conversational text, pre-explanations, or comments. "
                     "Never explain what you are going to do before calling a tool. Call it first, and only explain after you receive the tool results. "
                     "Whenever you use search results, synthesize the final answer and cite your sources by referencing their URL inline, e.g. [Source Title](url). "
@@ -147,6 +149,7 @@ async def websocket_chat(websocket: WebSocket):
                 start_time = None
                 first_token_time = None
                 token_count = 0
+                active_tools = {}
                 
                 while True:
                     generation_start = time.perf_counter()
@@ -166,6 +169,21 @@ async def websocket_chat(websocket: WebSocket):
                                 generation_first_token = time.perf_counter()
                             generation_token_count += 1
                             await websocket.send_text(json.dumps({"type": "token", "content": chunk.content}))
+
+                        # If we have tool call chunks, check if it's the python_interpreter tool
+                        if getattr(chunk, "tool_call_chunks", None):
+                            for tc_chunk in chunk.tool_call_chunks:
+                                idx = tc_chunk.get("index", 0)
+                                if tc_chunk.get("name"):
+                                    active_tools[idx] = tc_chunk["name"]
+                                
+                                if active_tools.get(idx) == "python_interpreter":
+                                    args_val = tc_chunk.get("args")
+                                    if args_val:
+                                        await websocket.send_text(json.dumps({
+                                            "type": "sandbox_stream",
+                                            "content": args_val
+                                        }))
                     
                     if full_message and full_message.tool_calls:
                         for tool_call in full_message.tool_calls:
@@ -185,6 +203,8 @@ async def websocket_chat(websocket: WebSocket):
                                 result = calculate.invoke(tool_args)
                             elif tool_name == "websearch":
                                 result = websearch.invoke(tool_args)
+                            elif tool_name == "python_interpreter":
+                                result = python_interpreter.invoke(tool_args)
                             else:
                                 result = f"Error: Tool '{tool_name}' not found."
                                 

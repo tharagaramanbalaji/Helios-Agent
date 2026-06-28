@@ -59,6 +59,7 @@ export default function App() {
     const assistantId = makeId()
     const requestId   = ++requestIdRef.current
     abortedRef.current = false
+    let accumulatedArgs = ''
 
     const abortController = new AbortController()
     abortControllerRef.current = abortController
@@ -89,6 +90,23 @@ export default function App() {
 
     const handleToolEvent = (event) => {
       if (requestId !== requestIdRef.current) return
+
+      if (event.type === 'sandbox_stream') {
+        accumulatedArgs += event.content || ''
+        const match = accumulatedArgs.match(/"code"\s*:\s*"((?:[^"\\]|\\.)*)/)
+        if (match) {
+          const unescapedCode = match[1]
+            .replace(/\\n/g, '\n')
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\')
+            .replace(/\\t/g, '\t')
+          
+          setSandboxCode(unescapedCode)
+          setSandboxOpen(true)
+        }
+        return
+      }
+
       setMessages((prev) =>
         prev.map((m) => {
           if (m.id !== assistantId) return m

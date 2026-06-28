@@ -5,6 +5,8 @@ from langgraph.graph.message import add_messages
 from langchain_ollama import ChatOllama
 from app.config import settings
 import math
+import subprocess
+import os
 from langchain_core.tools import tool
 
 @tool
@@ -24,6 +26,48 @@ def calculate(expression: str) -> str:
         return str(result)
     except Exception as e:
         return f"Error evaluating expression: {str(e)}"
+
+@tool
+def python_interpreter(code: str) -> str:
+    """Execute Python code in a local sandbox environment and return the standard output/errors.
+    Use this tool whenever you need to run Python scripts to write programs, solve coding tasks, process data, or perform computations.
+    Input must be valid Python code. Output results to stdout by using print() to see them."""
+    
+    sandbox_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sandbox")
+    os.makedirs(sandbox_dir, exist_ok=True)
+    
+    main_py = os.path.join(sandbox_dir, "main.py")
+    try:
+        with open(main_py, "w", encoding="utf-8") as f:
+            f.write(code)
+    except Exception as e:
+        return f"Error writing file: {str(e)}"
+        
+    python_bin = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "venv", "Scripts", "python.exe")
+    if not os.path.exists(python_bin):
+        python_bin = "python"
+        
+    try:
+        result = subprocess.run(
+            [python_bin, "main.py"],
+            cwd=sandbox_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=15.0
+        )
+        output = ""
+        if result.stdout:
+            output += result.stdout
+        if result.stderr:
+            output += f"\nErrors:\n{result.stderr}"
+        if not output:
+            output = f"[Executed successfully with exit code {result.returncode}, but produced no stdout/stderr]"
+        return output
+    except subprocess.TimeoutExpired as e:
+        return f"TimeoutExpired: Code execution exceeded 15 seconds limit. Output:\n{e.stdout or ''}\nErrors:\n{e.stderr or ''}"
+    except Exception as e:
+        return f"Execution failed: {str(e)}"
 
 import httpx
 import json

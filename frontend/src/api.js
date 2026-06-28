@@ -64,7 +64,7 @@ export function sendViaWebSocket(payload, { onToken, onToolEvent, signal }) {
       if (msg.type === 'token') {
         text += msg.content || ''
         onToken?.(text)
-      } else if (msg.type === 'tool_start' || msg.type === 'tool_result' || msg.type === 'benchmarks') {
+      } else if (msg.type === 'tool_start' || msg.type === 'tool_result' || msg.type === 'benchmarks' || msg.type === 'sandbox_stream') {
         onToolEvent?.(msg)
       } else if (msg.type === 'done') {
         cleanup(); resolve(text)
